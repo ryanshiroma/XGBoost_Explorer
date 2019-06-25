@@ -1,5 +1,5 @@
 # XGBoost Explorer
-A simple 1-dimensional XGBoost fitting visualizer
+A simple 1-dimensional XGBoost fitter visualizer
 
 To run this demo, install the following
 ```
