@@ -10,3 +10,5 @@ and run,
 ```
 python xgboost_explorer.py
 ```
+
+![dashboard screenshot](https://github.com/ryanshiroma/XGBoost_Explorer/blob/master/xgboost_explorer_dashboard.png)
