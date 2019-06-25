@@ -1,4 +1,4 @@
-# XGBoost_Explorer
+# XGBoost Explorer
 A simple 1-dimensional XGBoost visualizer
 
 To run this demo, install the following
