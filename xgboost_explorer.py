@@ -171,11 +171,12 @@ colorscale=['rgb(166,206,227)','rgb(31,120,180)','rgb(178,223,138)','rgb(51,160,
 seed=0
 b={}
 n_tree=0
-model_label='Baseline Model'
 N=1000
 n=250
+
 df_plot = generate_data('regression','sine',1,250)
 df_preds = generate_data('regression','sine',0,N)
+
 ## model settings
 settings= {'max_depth':1,
            'loss':mse,
@@ -184,8 +185,6 @@ settings= {'max_depth':1,
            'min_child_weight':1,
            'l2':0
            }
-
-
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -226,7 +225,7 @@ app.layout = html.Div([
                                     html.H6(children='Sample Size'),
                                     html.Div(dcc.Slider(id='data_size',disabled=False,min=50,max=500,step=50,value=250,marks={i: str(i) for i in [50,250,500]}),style=slider_style),
                                     html.H6(children='Loss Function'),
-                                    html.Div(dcc.Dropdown(id='model_loss',options=[{'label':'Mean Squared Error','value':'mse'},{'label':'Logarithmic Loss','value':'logloss'}],value='mse',clearable=False))
+                                    html.Div(dcc.Dropdown(id='model_loss',options=[{'label':'Mean Squared Error','value':'mse'},{'label':'Log Loss','value':'logloss'}],value='mse',clearable=False))
                                 ]
                             ),
                             html.Div(
