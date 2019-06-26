@@ -67,11 +67,7 @@ class Booster(object):
         tree['error'] = cut['loss']
         tree['opt'] = df
         return tree
-    
-    
-    def commit_cut(self,learn_rate):
-        self.settings['learn_rate']=learn_rate
-        self.yhat = self.data['yhat']+self.predict(self.data['x'])
+
         
     def __transform(self,values):
         return self.trxn_func(values)
@@ -85,7 +81,6 @@ class Booster(object):
         return self.__get_leaf(tree['left'],x) if x < tree['cut'] else self.__get_leaf(tree['right'],x)
     
     def get_loss(self):
-
         return self.__get_loss_recurse(self.tree)
     
     def __get_loss_recurse(self,tree):
@@ -103,10 +98,7 @@ class Booster(object):
         return opt
 
     
-def reset():
-    global b
-    b={}
-    return 
+
     
     ### create data
 def random_draw(x):
@@ -180,7 +172,6 @@ seed=0
 b={}
 n_tree=0
 model_label='Baseline Model'
-reset()
 N=1000
 n=250
 df_plot = generate_data('regression','sine',1,250)
@@ -341,7 +332,7 @@ def reset_all(update1,update2):
     if len(b)==0:
         raise PreventUpdate
     print('reseting')
-    reset()
+    b={}
     return [np.nan]
 
 
@@ -350,9 +341,7 @@ def reset_all(update1,update2):
                Input(component_id='just_saved_booster', component_property='children'),
                Input(component_id='just_updated_tree_settings', component_property='children')])
 def create_booster(update1,update2,update3):
-    #global b
-    #if len(b)==0:
-    #    raise PreventUpdate
+    global b
     print('creating booster')
     b[n_tree]=Booster(df_plot,settings)
     return [np.nan]
@@ -415,14 +404,13 @@ def update_plots(update1):
     cut_name = 'Cuts' if settings['transform'] is None else "Cuts(Logits)"
     #creating booster plot
     preds=b[n_tree].predict(df_preds['x'])
-    loss=b[n_tree].get_loss()#['loss']#b[n_tree].tree['opt']
+    loss=b[n_tree].get_loss()
     
     start=loss.isnull().astype(int).diff()==1
     end=loss.isnull().astype(int).diff()==-1
     start=[1]+start[start['loss']==True].index.tolist()
     end=end[end['loss']==True].index.tolist()+[len(loss)]
 
-    #print(b[n_tree].get_loss()['loss'])
     booster_traces=[{'x':list(df_plot['x']),'y':list(df_plot['y']-df_plot['yhat']),
                      'name':'Pseudo-Residuals','mode':'markers','hoverinfo':'x','xaxis':'x','yaxis':'y2','line':{'color':colorscale[0]}},
                     {'x':df_plot['x'],'y':loss['loss'],
@@ -468,7 +456,6 @@ def update_plots(update1):
     linestyle={'type':'line','layer':'below'}
     rectstyle =  {'fillcolor': 'rgba(255, 255, 255, 1)','layer': 'below'}
     textstyle = {'mode':'text','textposition':'middle center','textfont':{'family':'sans serif','size':18,'color':'#1f77b4'},'showlegend':False}
-   
     draw=make_tree(b[n_tree].tree,1,0.5,1,linestyle,rectstyle,textstyle,3)
     
     shapes = sorted([i for i in draw if 'type' in i], key=lambda k: k['type'])
