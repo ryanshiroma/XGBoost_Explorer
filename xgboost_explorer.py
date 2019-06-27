@@ -28,10 +28,14 @@ def logloss(y,yhat):
 class Booster(object):
     def __init__(self,data,settings):#initialize the booster object
         self.settings = dict((k, v) for k, v in settings.items())
+        self.cant_fit = False
         self.trxn_func = self.settings['transform'] or (lambda x: x)
         self.tree = self.__split(None,data.copy(deep=True),1)
         self.data=data
-        self.yhat = data['yhat']+self.predict(data['x'])
+        if self.cant_fit:
+            self.yhat = data['yhat']
+        else:
+            self.yhat = data['yhat']+self.predict(data['x'])
         
     def __get_opt(self,df):
         for i in df.index:
@@ -44,9 +48,15 @@ class Booster(object):
             df.loc[i,'hess_left'] = left['hess']
             df.loc[i,'hess_right'] = right['hess'] 
         df['min_child_weight'] = df[['hess_left','hess_right']].min(axis=1)
+        
+        #min child weight
         df['loss'] = np.where(df['min_child_weight'] >= self.settings['min_child_weight'],
                               -df['grad_left']**2/(df['hess_left']+self.settings['l2'])
                               -df['grad_right']**2/(df['hess_right']+self.settings['l2']),np.nan)
+        
+        #min split_loss
+        df['loss'] = np.where(df['loss']< -self.settings['min_split_loss'],df['loss'],np.nan)
+        
         df['weight_left'] = df['grad_left']/(df['hess_left']+self.settings['l2'])
         df['weight_right'] = df['grad_right']/(df['hess_right']+self.settings['l2'])
         return df
@@ -58,7 +68,8 @@ class Booster(object):
             return None
         df = self.__get_opt(df.copy())
         if df['loss'].isnull().all():
-            return None
+            self.cant_fit = True
+            return tree
         cut_ind = df['loss'].idxmin() #get the index of the best split
         cut = df.loc[cut_ind] #get the row for the best split
         tree['cut'] = (df['x'][cut_ind]+df['x'][cut_ind-1])/2 # get the x midpoint for the split
@@ -73,7 +84,10 @@ class Booster(object):
         return self.trxn_func(values)
 
     def predict(self,x):
-        return np.array([self.__get_leaf(self.tree,x[i]) for i in range(len(x))])
+        if self.cant_fit:
+            return 0
+        else:
+            return np.array([self.__get_leaf(self.tree,x[i]) for i in range(len(x))])
             
     def __get_leaf(self,tree,x):
         if not isinstance(tree,dict): #return if leaf, else continue down branch
@@ -171,20 +185,22 @@ colorscale=['rgb(166,206,227)','rgb(31,120,180)','rgb(178,223,138)','rgb(51,160,
 seed=0
 b={}
 n_tree=0
+model_label='Baseline Model'
 N=1000
 n=250
-
 df_plot = generate_data('regression','sine',1,250)
 df_preds = generate_data('regression','sine',0,N)
-
 ## model settings
 settings= {'max_depth':1,
            'loss':mse,
            'transform':None,
            'learn_rate':1,
            'min_child_weight':1,
-           'l2':0
+           'l2':0,
+           'min_split_loss':0
            }
+
+
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -225,7 +241,7 @@ app.layout = html.Div([
                                     html.H6(children='Sample Size'),
                                     html.Div(dcc.Slider(id='data_size',disabled=False,min=50,max=500,step=50,value=250,marks={i: str(i) for i in [50,250,500]}),style=slider_style),
                                     html.H6(children='Loss Function'),
-                                    html.Div(dcc.Dropdown(id='model_loss',options=[{'label':'Mean Squared Error','value':'mse'},{'label':'Log Loss','value':'logloss'}],value='mse',clearable=False))
+                                    html.Div(dcc.Dropdown(id='model_loss',options=[{'label':'Mean Squared Error','value':'mse'},{'label':'Logarithmic Loss','value':'logloss'}],value='mse',clearable=False))
                                 ]
                             ),
                             html.Div(
@@ -268,6 +284,13 @@ app.layout = html.Div([
                                     style=slider_style,
                                     children=[
                                         dcc.Slider(id='tree_l2', marks={float(i): str(int(i)) for i in [0,25,50,100]},min=0,max=100,value=1,step=0.5)
+                                    ]
+                                ),
+                                html.H6('Min Split Loss'),
+                                html.Div(
+                                    style=slider_style,
+                                    children=[
+                                        dcc.Slider(id='tree_min_split_loss', marks={float(i): str(int(i)) for i in [0,0.25,0.5,1]},min=0,max=1,value=0,step=0.01)
                                     ]
                                 ),
                                 html.Div(html.Button('Save Booster',id='save_booster'))
@@ -353,8 +376,9 @@ def create_booster(update1,update2,update3):
               [Input(component_id='tree_depth', component_property='value'),
                Input(component_id='tree_learn_rate', component_property='value'),
                Input(component_id='tree_min_child_weight', component_property='value'),
-               Input(component_id='tree_l2', component_property='value')])
-def update_tree_settings(depth,learn_rate,min_child_weight,l2):
+               Input(component_id='tree_l2', component_property='value'),
+               Input(component_id='tree_min_split_loss',component_property='value')])
+def update_tree_settings(depth,learn_rate,min_child_weight,l2,min_split_loss):
     if len(b)==0:
         raise PreventUpdate
     print('updating tree settings')
@@ -363,6 +387,7 @@ def update_tree_settings(depth,learn_rate,min_child_weight,l2):
     settings['l2'] =float(l2)
     settings['min_child_weight']=float(min_child_weight)
     settings['learn_rate']=float(learn_rate)
+    settings['min_split_loss']=float(min_split_loss)
     return [np.nan]
     
 
@@ -386,7 +411,7 @@ def save_booster(click):
     df_plot['preds']= transform(df_plot['yhat'])
     
     n_tree+=1
-    b[n_tree]=Booster(df_plot,settings)
+    #b[n_tree]=Booster(df_plot,settings)
     return [np.nan]
     
     
@@ -402,46 +427,7 @@ def update_plots(update1):
 
     cut_name = 'Cuts' if settings['transform'] is None else "Cuts(Logits)"
     #creating booster plot
-    preds=b[n_tree].predict(df_preds['x'])
-    loss=b[n_tree].get_loss()
-    
-    start=loss.isnull().astype(int).diff()==1
-    end=loss.isnull().astype(int).diff()==-1
-    start=[1]+start[start['loss']==True].index.tolist()
-    end=end[end['loss']==True].index.tolist()+[len(loss)]
-
-    booster_traces=[{'x':list(df_plot['x']),'y':list(df_plot['y']-df_plot['yhat']),
-                     'name':'Pseudo-Residuals','mode':'markers','hoverinfo':'x','xaxis':'x','yaxis':'y2','line':{'color':colorscale[0]}},
-                    {'x':df_plot['x'],'y':loss['loss'],
-                     'name':'Loss','mode':'lines','xaxis':'x','yaxis':'y1','line':{'color':colorscale[2]}},
-                    {'x':df_preds['x'],'y':preds,
-                     'name':cut_name,'mode':'lines','xaxis':'x','yaxis':'y2','line':{'color':colorscale[4]}}]
-    cutstyle = {'type': 'line','yref': 'paper','xref': 'x','y0': 0.0, 'y1': 1,'layer': 'above', 'line': {'color': 'rgb(55, 128, 191)','width': 3}}  
-    shadestyle = {'type':'rect','fillcolor': 'rgba(235, 235, 235, 0.5)','yref': 'paper','xref': 'x','layer': 'below','line': {
-                'color': 'rgba(0, 0, 0, 0)',
-                'width': 0,
-            }}
-    
-
-    booster_shapes=[{**cutstyle,'x0':df_preds.loc[c,'x'],'x1':df_preds.loc[c,'x']} for c in np.nonzero(np.diff(preds))[0]]
-   
-    for i in range(len(start)):
-        booster_shapes.append({**shadestyle,'x0':df_plot.loc[start[i]-1,'x'],'x1':df_plot.loc[end[i]-1,'x'],'y0':0,'y1':1})
-
-    #hack because dash "animate" doesnt work well with a variable number of shapes
-    for i in range(50-len(booster_shapes)):
-        booster_shapes.append(None)
-    
-    booster_figure = {'data':booster_traces, 'layout':{'title':'New Booster ','clickmode':'event+select','hovermode':'x','showlegend':True, 'spikedistance':-1,
-                                                       'xaxis':{'showspikes':True,'showline':True,'showgrid':True,'spikethickness':3,
-                                                                'spikesnap':"cursor",'spikedash':'solid','spikemode':"across+toaxis"},
-                                                       'yaxis':{'title':'loss','domain':[0,0.2]},
-                                                       'yaxis2':{'title':'y','domain':[0.3,1],'range':[-0.8,0.8]},
-                                                       'legend':go.layout.Legend(x=0.06,y=0.3),'margin':{'l': 40, 'b': 40, 't': 40, 'r': 10},
-                                                       'shapes': booster_shapes}}
-
-  
-    #creating model plot
+ #creating model plot
     model_traces=[{'x':df_plot['x'], 'y':df_plot['y'], 'name':'Data Points','mode':'markers','type':'scatter','line':{'color':colorscale[0]}},
                   {'x':df_plot['x'], 'y':df_plot['true'], 'name':'True Model','mode':'lines','type':'scatter','line':{'color':colorscale[1]}},
                   {'x':df_preds['x'], 'y':df_preds['preds'], 'name':'Current Model','mode':'lines','type':'scatter','line':{'color':colorscale[5]}},
@@ -449,7 +435,50 @@ def update_plots(update1):
                          'name': 'New Booster','mode':'lines','hoverinfo':'x','fill':'tonexty',
                          'line':{'dash':'dash','color':colorscale[4]},'showlegend':True}]
     
-    model_figure = {'data':model_traces,'layout':{'showlegend':True, 'legend':go.layout.Legend(x=0,y=1),'margin':{'l': 40, 'b': 40, 't': 30, 'r': 10},'yaxis':{'range':[-0.4,1.4]}}}
+    model_figure = {'data':model_traces,'layout':{'showlegend':True, 'legend':go.layout.Legend(x=0,y=1),'margin':{'l': 40, 'b': 40, 't': 30, 'r': 10},'yaxis':{'range':[-0.4,1.4],'title':'y'},'xaxis':{'title':'x'}}}
+    
+    
+
+    if b[n_tree].cant_fit:
+        return [{'data' : [go.Scatter(mode='text',text='"Min Split Loss" is too high, no splitting is possible', x=[1], y=[1])]},model_figure,{'data' : [go.Scatter( x=[np.nan], y=[np.nan])]}]
+    
+    preds=b[n_tree].predict(df_preds['x'])
+    loss=b[n_tree].get_loss()
+    start=loss.isnull().astype(int).diff()==1
+    end=loss.isnull().astype(int).diff()==-1
+    start=[1]+start[start['loss']==True].index.tolist()
+    end=end[end['loss']==True].index.tolist()+[len(loss)]
+
+    booster_traces=[{'x':list(df_plot['x']),'y':list(df_plot['y']-df_plot['yhat']),
+                         'name':'Pseudo-Residuals','mode':'markers','hoverinfo':'x','xaxis':'x','yaxis':'y2','line':{'color':colorscale[0]}},
+                        {'x':df_plot['x'],'y':loss['loss'],
+                         'name':'Loss','mode':'lines','xaxis':'x','yaxis':'y1','line':{'color':colorscale[2]}},
+                        {'x':df_preds['x'],'y':preds,
+                         'name':cut_name,'mode':'lines','xaxis':'x','yaxis':'y2','line':{'color':colorscale[4]}}]
+    cutstyle = {'type': 'line','yref': 'paper','xref': 'x','y0': 0.0, 'y1': 1,'layer': 'above', 'line': {'color': 'rgb(55, 128, 191)','width': 3}}  
+    shadestyle = {'type':'rect','fillcolor': 'rgba(235, 235, 235, 0.5)','yref': 'paper','xref': 'x','layer': 'below','line': {
+                    'color': 'rgba(0, 0, 0, 0)',
+                    'width': 0,
+                }}
+    booster_traces.append({'x':[5],'y':[-2],'xref':'paper','yref':'paper','mode':'text','text':'grey shadings block out potential cuts due to regularization settings','showlegend':False})
+
+    booster_shapes=[{**cutstyle,'x0':df_preds.loc[c,'x'],'x1':df_preds.loc[c,'x']} for c in np.nonzero(np.diff(preds))[0]]
+   
+    for i in range(len(start)):
+        booster_shapes.append({**shadestyle,'x0':df_plot.loc[start[i]-1,'x'],'x1':df_plot.loc[end[i]-1,'x'],'y0':0,'y1':1})
+    #hack because dash "animate" doesnt work well with a variable number of shapes
+    for i in range(50-len(booster_shapes)):
+        booster_shapes.append(None)
+    
+    booster_figure = {'data':booster_traces, 'layout':{'title':'New Booster ','clickmode':'event+select','hovermode':'x','showlegend':True, 'spikedistance':-1,
+                                                       'xaxis':{'title':'x','showspikes':True,'showline':True,'showgrid':True,'spikethickness':3,
+                                                                'spikesnap':"cursor",'spikedash':'solid','spikemode':"across+toaxis"},
+                                                       'yaxis':{'title':'loss','domain':[0,0.2]},
+                                                       'yaxis2':{'title':'Pseudo Residuals','domain':[0.3,1],'range':[-0.8,0.8]},
+                                                       'legend':go.layout.Legend(x=0.06,y=0.3),'margin':{'l': 40, 'b': 40, 't': 40, 'r': 10},
+                                                       'shapes': booster_shapes}}
+
+  
 
     #creating tree plot
     linestyle={'type':'line','layer':'below'}
