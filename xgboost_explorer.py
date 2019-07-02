@@ -202,6 +202,8 @@ settings= {'max_depth':1,
 
 
 
+app.scripts.config.serve_locally = True
+app.css.config.serve_locally = True
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
