@@ -27,7 +27,7 @@ conda env create -f environment.yml
 conda activate xgboost_explorer
 python xgboost_explorer.py
 ```
-
+Navigate to `127.0.0.1:8050`
 
 1) **First begin by selecting your data settings**
  a) **Problem Type**: `classification` for binary outcomes and `regression` for continuous
