@@ -30,11 +30,11 @@ python xgboost_explorer.py
 Navigate to `127.0.0.1:8050`
 
 1) **First begin by selecting your data settings**
- a) **Problem Type**: `classification` for binary outcomes and `regression` for continuous
- b) **Function**:  setting to pick bewtween multiple functions to fit on
- c) **Noise**: the amount of Gaussian noise to add to the dataset where the variance is the slider value divided by 75. (no particular reason for 75 other than that it made the slider number on a reasonable scale) 
- d) **Sample Size**: the number of data points to generate
- e) **Loss Function**: setting to switch between which loss function to minimize, MSE or logloss
+- **Problem Type**: `classification` for binary outcomes and `regression` for continuous
+- **Function**:  setting to pick bewtween multiple functions to fit on
+- **Noise**: the amount of Gaussian noise to add to the dataset where the variance is the slider value divided by 75. (no particular reason for 75 other than that it made the slider number on a reasonable scale) 
+- **Sample Size**: the number of data points to generate
+- **Loss Function**: setting to switch between which loss function to minimize, MSE or logloss
 
 The model plot(top left) shows the data points(blue dots), the true model function(blue line) and the current fitted model(red line).
 The booster plot(bottom left) shows the pseudo-residuals at the current tree(when you start the psuedo-residuals are just the datapoints themselves).
