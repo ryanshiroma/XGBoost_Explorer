@@ -1,4 +1,4 @@
-# XGBoost Explorer (A simple 1D XGBoost fitter visualizer)
+# XGBoost Explorer (A simple 1D XGBoost fitting visualizer)
 All too often as busy financial data scientists, we spend 90% of our time cleaning and prepping data, another 20% modeling, and another 20% justifying our choices to our business partners and validators/regulators. In an attempt to better understand how our choices on the most common XGBoost regularization hyperparameters, I'm working on a small demo to visualize how small changes in some hyperparameter settings can affect tree fitting.
 
 Currently, I've implemented the following hyperparameters:
