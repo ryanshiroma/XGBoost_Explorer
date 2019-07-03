@@ -21,6 +21,7 @@ Other things on the to-do list:
  - Add a plot showing potential test/error curves as new boosters are added.
 
 ## Quick Start Guide
+The easiest way to get set up is to create a Python 3 Conda environment using the `environment.yml` file in this repo. Install Ananconda [here](https://www.anaconda.com/distribution/) and be sure to grab the Python 3.7 version.
 ```
 conda env create -f environment.yml
 conda activate xgboost_explorer
