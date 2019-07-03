@@ -22,12 +22,14 @@ Other things on the to-do list:
 
 ## Quick Start Guide
 The easiest way to get set up is to create a Python 3 Conda environment using the `environment.yml` file in this repo. Install Ananconda [here](https://www.anaconda.com/distribution/) and be sure to grab the Python 3.7 version.
+
+Run the following in your terminal.
 ```
 conda env create -f environment.yml
 conda activate xgboost_explorer
 python xgboost_explorer.py
 ```
-Navigate to `127.0.0.1:8050`
+Then navigate to `127.0.0.1:8050` to load the demo page.
 
 1) **First begin by selecting your data settings**
 - **Problem Type**: `classification` for binary outcomes and `regression` for continuous
