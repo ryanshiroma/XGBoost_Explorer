@@ -202,12 +202,14 @@ settings= {'max_depth':1,
 
 
 
-app.scripts.config.serve_locally = True
-app.css.config.serve_locally = True
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+app.scripts.config.serve_locally = True
+app.css.config.serve_locally = True
+
 data_style={'width': '250px','display': 'inline-block', 'float': 'left','vertical-align': 'middle','margin-right':20}
 slider_style={'height': '20px', 'width': '100%','display': 'inline-block'}
 app.layout = html.Div([
