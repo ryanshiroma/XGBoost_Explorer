@@ -1,5 +1,5 @@
 # XGBoost Explorer (A simple 1D XGBoost fit visualizer)
-All too often as busy financial data scientists, we spend 90% of our time cleaning and prepping data, another 20% modeling, and another 20% justifying our choices to our business partners and validators/regulators. In an attempt to better understand how our choices on the most common XGBoost regularization hyperparameters, I'm working on a small demo to visualize how small changes in some hyperparameter settings can affect tree fitting.
+All too often as busy financial data scientists, we spend 90% of our time cleaning and prepping data, another 20% modeling, and another 20% justifying our choices to our business partners and validators/regulators. In an attempt to better understand the most common XGBoost regularization hyperparameters, I'm working on a small demo to visualize how small changes in some hyperparameter settings can affect tree fitting.
 
 Currently, I've implemented the following hyperparameters:
 - `max_depth`
@@ -33,13 +33,13 @@ Then navigate to `127.0.0.1:8050` to load the demo page.
 
 1) **First begin by selecting your data settings**
 - **Problem Type**: `classification` for binary outcomes and `regression` for continuous
-- **Function**:  setting to pick bewtween multiple functions to fit on
-- **Noise**: the amount of Gaussian noise to add to the dataset where the variance is the slider value divided by 75. (no particular reason for 75 other than that it made the slider number on a reasonable scale) 
+- **Function**:  setting to pick bewtween multiple data generating functions to fit on
+- **Noise**: the amount of Gaussian noise to add to the dataset where the variance is the slider value divided by 75. (no particular reason for 75 other than that it made the slider number show up on a reasonable 0-10 scale) 
 - **Sample Size**: the number of data points to generate
-- **Loss Function**: setting to switch between which loss function to minimize, MSE or logloss
+- **Loss Function**: setting to switch between which loss function to minimize: MSE or logloss.
 
 The model plot(top left) shows the data points(blue dots), the true model function(blue line) and the current fitted model(red line).
-The booster plot(bottom left) shows the pseudo-residuals at the current tree(when you start the psuedo-residuals are just the datapoints themselves).
+The booster plot(bottom left) shows the pseudo-residuals at the current tree(when you start, the psuedo-residuals are just the datapoints themselves).
 
 2) **Play around with the tree settings and see how changing the tree settings affect the fit**
 The booster plot will now show blue vertical lines where the tree split points have been made. The green subplot underneath show the loss at that particular split point. The red lines represent the predicted value, "weight", for the observations in that node. The right plot will update with the current tree fitted to the pseudo-residuals. Lastly, the model plot will update with a peek at how this booster will contribute to the final model, shown with the filled in red area.
