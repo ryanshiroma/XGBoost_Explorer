@@ -1,4 +1,7 @@
 # XGBoost Explorer (A simple 1D XGBoost fit visualizer)
+
+![dashboard screenshot](https://github.com/ryanshiroma/XGBoost_Explorer/blob/master/xgboost_explorer_dashboard.png)
+
 All too often as busy financial data scientists, we spend 90% of our time cleaning and prepping data, another 20% modeling, and another 20% justifying our choices to our business partners and validators/regulators. In an attempt to better understand the most common XGBoost regularization hyperparameters, I'm working on a small demo to visualize how small changes in some hyperparameter settings can affect tree fitting.
 
 Currently, I've implemented the following hyperparameters:
@@ -47,4 +50,4 @@ The booster plot will now show blue vertical lines where the tree split points h
 The booster will now be added to the full model and the new pseudo-residuals will be shown in the model plot. If you are running a regression, pay particular attention to how the pseudo-residuals shift up or down as new boosters are added.
 4) **Rinse, Repeat** 
 
-![dashboard screenshot](https://github.com/ryanshiroma/XGBoost_Explorer/blob/master/xgboost_explorer_dashboard.png)
+
